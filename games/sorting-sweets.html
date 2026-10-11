@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
 <style>
+[hidden]{display:none!important}
 /* Layout: three tall belts side by side (like the hand-drawn plan), a sorting box at the bottom of each */
 :root{
   --bg:#fff6f3; --panel:#ffffff; --ink:#3a2420; --soft:#8a6a62;
@@ -38,7 +39,7 @@ button{-webkit-touch-callout:none;touch-action:manipulation;min-height:48px}
 .wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:14px 28px;display:grid;gap:14px;box-sizing:border-box}
 /* While playing: one full screen, no scrolling */
 body.playing{overflow:hidden;position:fixed;inset:0}
-body.playing .wrap{height:100%;grid-template-rows:auto minmax(0,1fr);padding-block:8px;gap:8px}
+body.playing .wrap{height:100%;grid-template-rows:auto auto minmax(0,1fr);padding-block:8px;gap:8px}
 body.playing h1{font-size:1.6rem}
 #game:not([hidden]){display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;min-height:0}
 .play{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;padding:10px}
