@@ -1,0 +1,329 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sorting Sweets</title>
+<!-- Sorting Sweets v1.1 (2026-10-10) - game 1 of Sweet Shop Games -->
+<meta name="version" content="1.1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
+<style>
+/* Layout: three tall belts side by side (like the hand-drawn plan), a sorting box at the bottom of each */
+:root{
+  --bg:#fff6f3; --panel:#ffffff; --ink:#3a2420; --soft:#8a6a62;
+  --berry:#e2335c; --berry-ink:#ffffff; --choco:#6b3b24; --mint:#1f9a7c; --oops:#d23a1f;
+  --belt:#e9dcd6; --belt-line:#d3c1b9; --line:#ecd9d2; --robot:#5b6bd6; --lock:#c9b7b0;
+  --display:"Lilita One","Arial Rounded MT Bold",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#211514; --panel:#2e1f1d; --ink:#fbeee9; --soft:#c4a59c;
+  --berry:#ff5a7e; --berry-ink:#2a0d14; --choco:#a8673f; --mint:#45c9a8; --oops:#ff7a5c;
+  --belt:#3c2a27; --belt-line:#4d3733; --line:#463230; --robot:#8b98ff; --lock:#6d5752; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#211514; --panel:#2e1f1d; --ink:#fbeee9; --soft:#c4a59c;
+  --berry:#ff5a7e; --berry-ink:#2a0d14; --choco:#a8673f; --mint:#45c9a8; --oops:#ff7a5c;
+  --belt:#3c2a27; --belt-line:#4d3733; --line:#463230; --robot:#8b98ff; --lock:#6d5752; color-scheme:dark}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;overscroll-behavior:none}
+body{margin:0}
+.back{display:inline-flex;align-items:center;min-height:44px;font-weight:900;color:var(--soft);text-decoration:none}
+.back:focus-visible{outline:3px solid var(--mint);outline-offset:2px;border-radius:8px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.bank{font-weight:900;color:var(--soft)}
+.bank b{color:var(--ink)}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:600;font-size:16px;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button{-webkit-touch-callout:none;touch-action:manipulation;min-height:48px}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:14px 28px;display:grid;gap:14px;box-sizing:border-box}
+/* While playing: one full screen, no scrolling */
+body.playing{overflow:hidden;position:fixed;inset:0}
+body.playing .wrap{height:100%;grid-template-rows:auto minmax(0,1fr);padding-block:8px;gap:8px}
+body.playing h1{font-size:1.6rem}
+#game:not([hidden]){display:grid;grid-template-rows:auto minmax(0,1fr) auto;gap:8px;min-height:0}
+.play{display:grid;grid-template-rows:minmax(0,1fr) auto;min-height:0;padding:10px}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(2rem,8vw,3.4rem);letter-spacing:.04em;text-wrap:balance;margin:0;line-height:1;color:var(--berry)}
+h2{font-family:var(--display);font-weight:400;font-size:1.3rem;margin:0;text-wrap:balance}
+button{font-family:var(--body);font-weight:900;font-size:1rem;border:0;border-radius:14px;cursor:pointer;color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--mint);outline-offset:2px}
+.big{background:var(--berry);color:var(--berry-ink);padding:14px 22px;font-size:1.2rem;box-shadow:0 4px 0 color-mix(in srgb,var(--berry) 60%,#000)}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--berry) 60%,#000)}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:14px}
+.num{font-variant-numeric:tabular-nums}
+
+/* start */
+#start{display:grid;gap:16px;justify-items:start}
+label,.lbl{font-weight:900}
+input[type=text]{font:inherit;font-weight:800;font-size:1.1rem;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);width:min(100%,320px)}
+.choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.choices button{background:var(--bg);border:2px solid var(--line);padding:10px 16px}
+.choices button[aria-pressed="true"]{border-color:var(--berry);background:color-mix(in srgb,var(--berry) 15%,var(--bg))}
+.howto{display:grid;gap:6px;margin:0;padding-left:1.2em;line-height:1.45;max-width:60ch}
+
+/* score bar */
+.hud{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center}
+.hud div{display:grid;gap:2px}
+.hud b{font-family:var(--display);font-weight:400;font-size:1.8rem;line-height:1}
+.hud span{font-size:.85rem;color:var(--soft);font-weight:800}
+.hud .bot b{color:var(--robot)}
+
+/* belts */
+.field{position:relative;height:100%;min-height:240px;-webkit-touch-callout:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;touch-action:none;user-select:none;-webkit-user-select:none}
+.belt{position:relative;background:var(--belt);border:2px solid var(--belt-line);border-bottom:0;border-radius:12px 12px 0 0;overflow:hidden}
+.belt::before{content:"";position:absolute;inset:0;background:repeating-linear-gradient(180deg,transparent 0 26px,var(--belt-line) 26px 29px);animation:roll 1s linear infinite}
+@keyframes roll{to{transform:translateY(29px)}}
+.layer{position:absolute;inset:0;overflow:hidden}
+.treat{position:absolute;top:0;width:84px;height:84px;margin-left:-42px;cursor:grab;transition:left .15s ease-out;touch-action:none;border-radius:16px;padding:6px;background:transparent;box-sizing:border-box}
+.treat svg{width:100%;height:100%;pointer-events:none}
+.treat.drag{transition:none;transform-origin:center}
+.treat.sel{background:color-mix(in srgb,var(--mint) 30%,transparent);outline:3px solid var(--mint)}
+.boxes{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.box{background:var(--choco);color:#fff;border-radius:0 0 14px 14px;padding:8px 4px;display:grid;justify-items:center;gap:2px;text-align:center;position:relative}
+.box svg{width:42px;height:42px}
+.box .bn{font-weight:900;font-size:.85rem;line-height:1.1}
+.box.good{animation:good .4s}
+.box.bad{animation:bad .4s}
+@keyframes good{50%{transform:scale(1.08)}}
+@keyframes bad{25%{transform:translateX(-6px)}75%{transform:translateX(6px)}}
+.pop{position:absolute;top:-6px;left:50%;transform:translateX(-50%);font-weight:900;font-size:1.1rem;animation:up .9s ease-out forwards;pointer-events:none;white-space:nowrap;
+  background:var(--panel);border-radius:99px;padding:2px 10px}
+.pop.g{color:var(--mint)} .pop.b{color:var(--oops)}
+@keyframes up{to{transform:translate(-50%,-44px);opacity:0}}
+.tip{margin:0;color:var(--soft);font-weight:800;text-align:center}
+
+/* end */
+#end{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 88%,transparent);display:grid;place-items:center;padding:16px;z-index:5;overflow:auto}
+#end .card{max-width:440px;width:100%;display:grid;gap:12px;justify-items:center;text-align:center}
+.stars{font-size:2.6rem;letter-spacing:.1em;color:var(--lock)}
+.stars .on{color:#f2b51c}
+.tally{display:grid;grid-template-columns:1fr auto;gap:6px 16px;text-align:left;width:100%}
+.tally .num{text-align:right;font-weight:900}
+.tally .tot{border-top:2px solid var(--line);padding-top:6px;font-weight:900}
+@media (max-width:480px){.box .bn{font-size:.75rem}.treat{width:70px;height:70px;margin-left:-35px}.hud b{font-size:1.4rem}}
+@media (min-width:700px){.box svg{width:56px;height:56px}.box .bn{font-size:1rem}}
+@media (prefers-reduced-motion:reduce){.belt::before{animation:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a class="back" href="../index.html">&larr; All games</a><span class="bank">Coin bank: <b class="num" id="bankTop">0</b></span></div>
+  <h1>SORTING SWEETS</h1>
+
+  <section id="start" class="card">
+    <h2>Sort the treats!</h2>
+    <ol class="howto">
+      <li>Treats come down the 3 belts. They come on any belt!</li>
+      <li>Slide a treat with your finger to the belt with the matching box. You can also tap a treat, then tap a belt.</li>
+      <li>Right box: +10 coins. Wrong box: no coins.</li>
+      <li>At the end, you get bonus coins. The better you sort, the bigger the bonus!</li>
+      <li>Robo Sweets sorts too. Get more coins than the robot to win.</li>
+    </ol>
+    <label for="factoryName">Name your factory</label>
+    <input type="text" id="factoryName" maxlength="18" value="Sweet Factory" autocomplete="off">
+    <div>
+      <span class="lbl">How good is Robo Sweets?</span>
+      <div class="choices" id="levels">
+        <button type="button" data-level="easy" aria-pressed="true">Easy</button>
+        <button type="button" data-level="medium" aria-pressed="false">Medium</button>
+        <button type="button" data-level="hard" aria-pressed="false">Hard</button>
+      </div>
+    </div>
+    <button class="big" id="go">Start!</button>
+    <small style="color:var(--soft)">v1.1</small>
+  </section>
+
+  <section id="game" hidden>
+      <div class="card hud">
+        <div><b class="num" id="coins">0</b><span id="myName">Your coins</span></div>
+        <div><b class="num" id="left">30</b><span>treats left</span></div>
+        <div class="bot"><b class="num" id="botCoins">0</b><span>Robo Sweets</span></div>
+      </div>
+      <div class="card play">
+        <div class="field" id="field">
+          <div class="belt"></div><div class="belt"></div><div class="belt"></div>
+          <div class="layer" id="layer"></div>
+        </div>
+        <div class="boxes" id="boxes"></div>
+      </div>
+      <p class="tip">Drag each treat to the belt with the same box!</p>
+  </section>
+</div>
+
+<div id="end" hidden>
+  <div class="card">
+    <h2 id="endTitle"></h2>
+    <div class="stars" id="stars" aria-label=""></div>
+    <div class="tally num" id="tally"></div>
+    <p id="endText" style="margin:0"></p>
+    <p id="bankText" style="margin:0;font-weight:900"></p>
+    <button class="big" id="again">Play again</button>
+    <a class="back" href="../index.html">&larr; Back to all games</a>
+  </div>
+</div>
+
+<script>
+// Shared coin bank for all Sweet Shop Games (saved on this device only)
+const BANK_KEY = "sweetShopGames.coins";
+function readBank(){ try{ return Math.max(0, parseInt(localStorage.getItem(BANK_KEY) || "0", 10) || 0); }catch(_){ return 0; } }
+function addToBank(n){ const t = readBank() + n; try{ localStorage.setItem(BANK_KEY, String(t)); }catch(_){} return t; }
+function showBank(){ const el = document.getElementById("bankTop"); if(el) el.textContent = readBank().toLocaleString("en-US"); }
+showBank();
+
+// Treat pictures, drawn like the hand-drawn plan
+const SVG = {
+  choco:`<svg viewBox="0 0 44 44"><rect x="9" y="4" width="26" height="36" rx="3" fill="#6b3b24" stroke="#3b1e10" stroke-width="2"/><path d="M22 4v36M9 16h26M9 28h26" stroke="#3b1e10" stroke-width="2"/></svg>`,
+  cake:`<svg viewBox="0 0 44 44"><path d="M8 14 L36 6 L36 38 L8 38 Z" fill="#f6c96a" stroke="#7a4b20" stroke-width="2" stroke-linejoin="round"/><path d="M8 14 L36 6" stroke="#e2335c" stroke-width="4"/><path d="M8 26 H36" stroke="#fff3d6" stroke-width="3"/></svg>`,
+  berry:`<svg viewBox="0 0 44 44"><path d="M7 16 Q22 12 37 16 Q34 34 22 42 Q10 34 7 16Z" fill="#e2335c" stroke="#8c1430" stroke-width="2"/><path d="M8 16 L12 5 L16 15 L20 4 L24 15 L28 4 L31 15 L36 6 L36 16" fill="#2fae8f" stroke="#17614f" stroke-width="1.6" stroke-linejoin="round"/><g fill="#fff3a8"><circle cx="15" cy="22" r="1.4"/><circle cx="22" cy="21" r="1.4"/><circle cx="29" cy="22" r="1.4"/><circle cx="18" cy="29" r="1.4"/><circle cx="26" cy="29" r="1.4"/><circle cx="22" cy="35" r="1.4"/></g></svg>`
+};
+const KINDS = [ {key:"choco", name:"Chocolate Bars"}, {key:"cake", name:"Cake"}, {key:"berry", name:"Strawberries"} ];
+const TOTAL = 30, RIGHT = 10;
+// How often the robot puts a treat in the right box
+const ROBOT = {easy:0.6, medium:0.8, hard:0.93};
+// Bonus at the end: the better you sort, the more coins
+function bonusFor(pct){ return pct===100?150 : pct>=90?100 : pct>=75?50 : pct>=50?20 : 0; }
+function starsFor(pct){ return pct>=90?3 : pct>=75?2 : pct>=50?1 : 0; }
+
+const $ = id => document.getElementById(id);
+const field = $("field"), layer = $("layer");
+let S = null, sel = null, drag = null;
+
+$("boxes").innerHTML = KINDS.map((k,i)=>`<div class="box" id="box${i}">${SVG[k.key]}<span class="bn">${k.name}</span><span class="num" id="cnt${i}">0</span></div>`).join("");
+
+function colLeft(i){ return `calc((100% - 20px) / 3 * ${i} + 10px * ${i} + (100% - 20px) / 6)`; }
+function beltAt(x){
+  const r = field.getBoundingClientRect();
+  return Math.max(0, Math.min(2, Math.floor((x - r.left) / r.width * 3)));
+}
+
+function spawn(){
+  const t = { kind: Math.floor(Math.random()*3), belt: Math.floor(Math.random()*3), y: -60 };
+  t.el = document.createElement("button");
+  t.el.type = "button"; t.el.className = "treat";
+  t.el.setAttribute("aria-label", KINDS[t.kind].name);
+  t.el.innerHTML = SVG[KINDS[t.kind].key];
+  t.el.style.left = colLeft(t.belt);
+  t.el.addEventListener("pointerdown", e=>{
+    e.preventDefault(); e.stopPropagation();
+    select(t); drag = {t, moved:false};
+    try{ t.el.setPointerCapture(e.pointerId); }catch(_){}
+  });
+  t.el.addEventListener("pointermove", e=>{
+    if(!drag || drag.t !== t) return;
+    const b = beltAt(e.clientX);
+    if(b !== t.belt){ moveTo(t, b); drag.moved = true; }
+  });
+  t.el.addEventListener("pointerup", ()=>{ if(drag && drag.t===t){ if(drag.moved) select(null); drag = null; } });
+  layer.appendChild(t.el);
+  S.items.push(t);
+  S.spawned++;
+}
+function select(t){
+  if(sel) sel.el.classList.remove("sel");
+  sel = t;
+  if(sel) sel.el.classList.add("sel");
+}
+function moveTo(t, b){ t.belt = b; t.el.style.left = colLeft(b); }
+
+// Stop iPhone and iPad from scrolling or zooming while you play
+["touchmove","gesturestart","dblclick"].forEach(ev=>document.addEventListener(ev, e=>{ if(document.body.classList.contains("playing")) e.preventDefault(); }, {passive:false}));
+field.addEventListener("contextmenu", e=>e.preventDefault());
+// Tap a belt after picking a treat
+field.addEventListener("pointerdown", e=>{
+  if(!sel || !S || S.over) return;
+  moveTo(sel, beltAt(e.clientX)); select(null);
+});
+// Keyboard: 1, 2, 3 moves the picked treat, or the lowest one
+document.addEventListener("keydown", e=>{
+  if(!S || S.over || !["1","2","3"].includes(e.key)) return;
+  const t = sel || S.items.slice().sort((a,b)=>b.y-a.y)[0];
+  if(t){ moveTo(t, +e.key - 1); select(null); }
+});
+
+function land(t){
+  t.el.remove();
+  S.items = S.items.filter(x=>x!==t);
+  if(sel===t) select(null);
+  const ok = t.kind === t.belt, box = $("box"+t.belt);
+  S.done++;
+  S.inBox[t.belt]++; $("cnt"+t.belt).textContent = S.inBox[t.belt];
+  if(ok){ S.right++; S.coins += RIGHT; }
+  const p = document.createElement("div");
+  p.className = "pop " + (ok ? "g" : "b"); p.textContent = ok ? "+" + RIGHT : "Oops!";
+  box.appendChild(p); p.addEventListener("animationend", ()=>p.remove());
+  box.classList.remove("good","bad"); void box.offsetWidth; box.classList.add(ok ? "good" : "bad");
+  // The robot sorts one treat each time you do
+  if(Math.random() < ROBOT[S.level]){ S.botRight++; S.botCoins += RIGHT; }
+  draw();
+  if(S.done >= TOTAL) setTimeout(finish, 600);
+}
+
+function draw(){
+  $("coins").textContent = S.coins;
+  $("botCoins").textContent = S.botCoins;
+  $("left").textContent = TOTAL - S.done;
+}
+
+let last = 0;
+function loop(now){
+  if(!S || S.over) return;
+  const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
+  const H = field.clientHeight;
+  const progress = S.spawned / TOTAL;              // game gets a little faster
+  const fallTime = 7 - 2.5 * progress;               // seconds from top to box
+  const every = 1.9 - 0.9 * progress;                // seconds between treats
+  S.clock += dt;
+  if(S.spawned < TOTAL && S.clock >= every){ S.clock = 0; spawn(); }
+  for(const t of S.items.slice()){
+    t.y += (H + 60) / fallTime * dt;
+    t.el.style.transform = `translateY(${t.y}px)`;
+    if(t.y >= H - 40) land(t);
+  }
+  requestAnimationFrame(loop);
+}
+
+function finish(){
+  S.over = true; select(null);
+  const pct = Math.round(S.right / TOTAL * 100), bonus = bonusFor(pct), total = S.coins + bonus;
+  const bpct = Math.round(S.botRight / TOTAL * 100), bbonus = bonusFor(bpct), btotal = S.botCoins + bbonus;
+  const st = starsFor(pct);
+  $("stars").innerHTML = [0,1,2].map(i=>`<span class="${i<st?"on":""}">★</span>`).join("");
+  $("stars").setAttribute("aria-label", `${st} out of 3 stars`);
+  $("tally").innerHTML = `
+    <span>You sorted right</span><span class="num">${S.right} of ${TOTAL} (${pct}%)</span>
+    <span>Coins for sorting</span><span class="num">${S.coins}</span>
+    <span>Bonus coins</span><span class="num">+${bonus}</span>
+    <span class="tot">${S.name}</span><span class="num tot">${total}</span>
+    <span class="tot">Robo Sweets (${bpct}% right)</span><span class="num tot">${btotal}</span>`;
+  const win = total > btotal, tie = total === btotal;
+  $("endTitle").textContent = tie ? "It is a tie!" : win ? "You win!" : "Robo Sweets wins!";
+  $("endText").textContent = pct===100 ? "Perfect sorting! You got the biggest bonus!" :
+    pct>=90 ? "Super sorting! Get them all right for the biggest bonus." :
+    "Sort more treats right to get a bigger bonus.";
+  const newBank = addToBank(total); showBank();
+  $("bankText").textContent = `+${total} coins to your coin bank. Bank: ${newBank.toLocaleString("en-US")} coins`;
+  $("end").hidden = false; $("again").focus();
+}
+
+// Start screen
+let pick = "easy";
+document.querySelectorAll("#levels button").forEach(b=>b.addEventListener("click",()=>{
+  pick = b.dataset.level;
+  document.querySelectorAll("#levels button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+}));
+$("go").addEventListener("click", ()=>{
+  const name = $("factoryName").value.trim() || "My Factory";
+  layer.innerHTML = ""; [0,1,2].forEach(i=>$("cnt"+i).textContent="0");
+  S = {name, level:pick, items:[], spawned:0, done:0, right:0, coins:0, botRight:0, botCoins:0, inBox:[0,0,0], clock:1.5, over:false};
+  $("myName").textContent = name;
+  $("start").hidden = true; $("game").hidden = false; $("end").hidden = true;
+  document.body.classList.add("playing"); window.scrollTo(0,0);
+  draw(); last = 0; requestAnimationFrame(loop);
+});
+$("again").addEventListener("click", ()=>{
+  $("end").hidden = true; $("game").hidden = true; $("start").hidden = false; S = null;
+  document.body.classList.remove("playing");
+});
+</script>
+</body>
+</html>
