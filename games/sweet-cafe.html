@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Sweet Cafe</title>
-<!-- Sweet Cafe v1.4 (2026-10-12) - game 3 of Sweet Shop Games. Layout from the hand-drawn sketch. v1.1: the newest customer always comes in on the left. v1.2: lighter, bigger chocolate chips and a lighter table. v1.3: characters from Mind Reader Mania (you pick one, the others are customers); customers wait less. v1.4: Beat the clock ends when you reach the goal; menu board prices (ice cream 10, drink 8, pastry 6) with the order price in the bubble; 60-second day -->
-<meta name="version" content="1.4">
+<!-- Sweet Cafe v1.5 (2026-10-12) - game 3 of Sweet Shop Games. Layout from the hand-drawn sketch. v1.1: the newest customer always comes in on the left. v1.2: lighter, bigger chocolate chips and a lighter table. v1.3: characters from Mind Reader Mania (you pick one, the others are customers); customers wait less. v1.4: Beat the clock ends when you reach the goal; menu board prices (ice cream 10, drink 8, pastry 6) with the order price in the bubble; 60-second day. v1.5: bigger toppings with outlines, pictures fill the bubble, bigger order bubbles -->
+<meta name="version" content="1.5">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
 <style>
@@ -94,7 +94,9 @@ input[type=text]{font:inherit;font-weight:800;font-size:1.1rem;padding:10px 12px
 
 /* customers */
 .shop{position:relative;background:var(--wall);border:2px solid var(--line);border-radius:18px;display:grid;grid-template-rows:auto minmax(0,1fr) 12px;min-height:0;overflow:hidden}
-.shop::after{content:"";background:linear-gradient(var(--counter-top) 0 5px,var(--counter) 5px)}
+/* fixed rows: the customers always use the middle row, even when the menu board is hidden */
+.shop > .board{grid-row:1} .shop > .seats{grid-row:2}
+.shop::after{grid-row:3;content:"";background:linear-gradient(var(--counter-top) 0 5px,var(--counter) 5px)}
 .seats{display:grid;grid-template-columns:repeat(var(--seats,3),minmax(0,1fr));gap:6px;padding:4px 6px 0;min-height:0}
 .seat{position:relative;display:grid;grid-template-rows:minmax(56px,1fr) auto auto;justify-items:center;align-items:end;gap:2px;min-height:0;background:transparent;border-radius:14px;padding:2px 2px 0;border:3px solid transparent}
 button.seat{color:inherit}
@@ -109,10 +111,10 @@ button.seat{color:inherit}
 .top .board{display:none}
 .board b{font-family:var(--display);font-weight:400;letter-spacing:.05em;color:#f2b51c}
 .board span{display:inline-flex;align-items:center;gap:2px}
-.board svg{height:16px;width:auto}
+.board svg{height:16px;width:auto;max-width:24px}
 .price{position:absolute;top:-7px;right:-7px;background:#f2b51c;color:#3a2420;border:2px solid #a87410;border-radius:99px;padding:0 6px 0 5px;font-weight:900;font-size:.78rem;line-height:1.35;display:inline-flex;align-items:center;gap:2px;z-index:1}
 .price i{width:9px;height:9px;border-radius:50%;background:#fff3c4;border:1.5px solid #a87410;display:inline-block}
-.bubble{position:relative;background:var(--bubble);border:2px solid var(--line);border-radius:16px;padding:2px 4px;display:flex;justify-content:center;align-items:flex-end;gap:0;height:100%;min-height:56px;max-height:110px;box-sizing:border-box;max-width:100%}
+.bubble{position:relative;background:var(--bubble);border:2px solid var(--line);border-radius:16px;padding:2px 4px;display:flex;justify-content:center;align-items:flex-end;gap:0;height:100%;min-height:56px;max-height:180px;box-sizing:border-box;max-width:100%}
 .bubble::after{content:"";position:absolute;bottom:-9px;left:50%;margin-left:-8px;border:8px solid transparent;border-top-color:var(--bubble);border-bottom:0}
 .bubble svg{height:100%;width:auto;max-width:50%;flex:0 1 auto}
 .bubble.n1 svg{max-width:100%}
@@ -181,10 +183,23 @@ button.seat{color:inherit}
 @media (max-height:760px){
   .shop .board{display:none}
   body.playing .top .board:not([hidden]){display:flex;gap:5px;padding:1px 7px;font-size:.66rem}
-  body.playing .top .board svg{height:14px}
-  .pbox .cface{width:34px !important;height:34px !important} .cname{font-size:.62rem}
-  .seat{grid-template-rows:minmax(44px,1fr) auto auto}
-  .bubble{min-height:44px}
+  body.playing .top .board svg{height:12px;max-width:17px}
+  .pbox .cface{width:30px !important;height:30px !important} .cname{font-size:.58rem} .mood{font-size:12px}
+  .seat{grid-template-rows:minmax(44px,1fr) auto auto;gap:1px} .wait{margin-top:2px}
+  .bubble{min-height:44px;max-height:160px}
+}
+/* tall phones: the bubble is tall and thin, so 2 things stack one above the other */
+@media (max-width:699px) and (min-height:761px){
+  .bubble{flex-direction:column;align-items:center;justify-content:space-evenly;padding:4px}
+  .bubble svg{flex:1 1 0;min-height:0;height:auto;width:100%;max-width:100%}
+}
+/* phones: more room for the order bubbles. The tip sits on top of the table and the sun bar hides. */
+@media (max-height:760px) and (max-width:699px){
+  .sun{display:none} .hud{padding:3px 8px}
+  .tabletop > .name{display:none}
+  .work{grid-template-areas:"tabletop acts"}
+  .work .tip{grid-area:tabletop;align-self:start;z-index:1;font-size:.7rem;padding:2px 6px;pointer-events:none;text-align:left;background:color-mix(in srgb,var(--table) 85%,transparent);border-radius:12px 12px 0 0}
+  .tip:empty{display:none}
 }
 /* short screens (small phones): everything a little smaller, the tip sits on top of the table */
 @media (max-height:620px){
@@ -197,7 +212,7 @@ button.seat{color:inherit}
   .bubble{min-height:42px} .board{font-size:.62rem;margin-top:0} .board svg{height:13px} .price{font-size:.68rem;top:-6px;right:-6px}
   .pbox .cface{width:30px !important;height:30px !important} .cname{font-size:.56rem} .mood{font-size:12px}
   .seat{gap:1px} .wait{margin-top:2px}
-  body.playing .top .board:not([hidden]){font-size:.58rem;gap:3px;padding:1px 5px} body.playing .top .board svg{height:12px}
+  body.playing .top .board:not([hidden]){font-size:.58rem;gap:3px;padding:1px 5px} body.playing .top .board svg{height:11px;max-width:15px}
   .tabletop{height:60px;padding-top:4px} .tabletop > .name{display:none}
   .work{grid-template-areas:"tabletop acts"}
   .work .tip{grid-area:tabletop;align-self:start;z-index:1;font-size:.7rem;padding:2px 6px;pointer-events:none;text-align:left;background:color-mix(in srgb,var(--table) 85%,transparent);border-radius:12px 12px 0 0}
@@ -217,7 +232,7 @@ button.seat{color:inherit}
   .tabletop{height:120px}
   .seats{align-items:end}
   .seat{align-self:end;grid-template-rows:auto auto auto}
-  .bubble{height:clamp(90px,15vh,150px);max-height:none} .board{font-size:.9rem;padding:2px 14px} .board svg{height:22px} .price{font-size:.95rem}
+  .bubble{height:clamp(110px,22vh,220px);max-height:none} .board{font-size:.9rem;padding:2px 14px} .board svg{height:22px} .price{font-size:.95rem}
   .pbox .cface{width:64px !important;height:64px !important} .cname{font-size:.8rem} .mood{font-size:20px}
   .station button{height:58px;font-size:.75rem} .station button svg{height:36px}
   body.playing h1{display:none}
@@ -273,7 +288,7 @@ button.seat{color:inherit}
       <p class="note" id="levelInfo" style="margin-top:6px;color:var(--soft)"></p>
     </div>
     <button class="big" id="go">Open the cafe!</button>
-    <small style="color:var(--soft)">v1.4</small>
+    <small style="color:var(--soft)">v1.5</small>
   </section>
 
   <section id="game" hidden>
@@ -342,9 +357,9 @@ const TOPS = { cherry:"Cherry", sprinkles:"Sprinkles", mint:"Mint", chip:"Chocol
 const DRINK = { tea:{name:"Tea", fill:"#c9853a"}, latte:{name:"Latte", fill:"#d9b38c"}, coffee:{name:"Coffee", fill:"#4a2a18"} };
 const PASTRY = { scone:"Scone", muffin:"Muffin", croissant:"Croissant" };
 
-// One picture for any item. viewBox is 60 wide, 80 tall.
+// One picture for any item. Drawn on a 60 x 80 grid; the picture box starts at the top of the drawing (vbTop).
 function drawItem(it){
-  let g = "";
+  let g = "", vbTop = 0;
   if(it.type==="ice"){
     const coneTop = it.base==="cone" ? 46 : 52;
     if(it.base==="cone") g += `<path d="M17 46 L43 46 L30 78 Z" fill="#e8b065" stroke="#9a6a2c" stroke-width="2" stroke-linejoin="round"/><path d="M21 52 L37 52 M24 60 L35 60 M27 68 L33 68" stroke="#9a6a2c" stroke-width="1.4"/>`;
@@ -354,10 +369,15 @@ function drawItem(it){
       g += `<circle cx="30" cy="${cy}" r="12" fill="${c.fill}" stroke="${c.line}" stroke-width="2"/>`;
       if(c.dots) g += `<g fill="${c.dots}"><circle cx="25" cy="${cy-3}" r="1.6"/><circle cx="33" cy="${cy-4}" r="1.4"/><circle cx="29" cy="${cy+3}" r="1.6"/><circle cx="36" cy="${cy+2}" r="1.2"/></g>`; });
     const topY = it.scoops.length ? y - (it.scoops.length-1)*12 - 12 : coneTop;
-    if(it.top==="cherry") g += `<path d="M30 ${topY-2} Q33 ${topY-10} 37 ${topY-12}" fill="none" stroke="#3f7a2a" stroke-width="1.6"/><circle cx="30" cy="${topY}" r="4.5" fill="#d4183f" stroke="#7a0c22" stroke-width="1.4"/>`;
-    if(it.top==="sprinkles"){ const sy = topY + 6; g += `<g stroke-width="2.4" stroke-linecap="round"><path d="M23 ${sy} l3 -2" stroke="#2f8fd6"/><path d="M30 ${sy-3} l2 2" stroke="#f2b51c"/><path d="M36 ${sy} l-3 -2" stroke="#1f9a7c"/><path d="M26 ${sy+4} l3 1" stroke="#e2335c"/><path d="M33 ${sy+4} l2 -2" stroke="#8b5cf6"/></g>`; }
-    if(it.top==="mint") g += `<path d="M30 ${topY+1} Q22 ${topY-1} 21 ${topY-8} Q29 ${topY-8} 30 ${topY+1} Z M30 ${topY+1} Q38 ${topY-1} 39 ${topY-8} Q31 ${topY-8} 30 ${topY+1} Z" fill="#3fbf6a" stroke="#1f7a3f" stroke-width="1.3"/>`;
-    if(it.top==="chip"){ const sy = topY + 6; g += `<g fill="#c9894f" stroke="#fff6e8" stroke-width="1" stroke-linejoin="round"><path d="M21 ${sy+1} l3 -5 l3 5 z"/><path d="M28 ${sy-3} l3 -5 l3 5 z"/><path d="M35 ${sy+1} l3 -5 l3 5 z"/><path d="M26 ${sy+6} l3 -5 l3 5 z"/><path d="M32 ${sy+7} l3 -5 l3 5 z"/></g>`; }
+    // Toppings sit on the top scoop. They are big with dark outlines, so they show in small phone bubbles.
+    if(it.top==="cherry") g += `<path d="M31 ${topY-4} Q34 ${topY-12} 40 ${topY-13}" fill="none" stroke="#2f6b20" stroke-width="2.4" stroke-linecap="round"/><circle cx="30" cy="${topY+1}" r="7.5" fill="#d4183f" stroke="#5c0818" stroke-width="2"/><circle cx="27.5" cy="${topY-1.5}" r="2" fill="#ff9ab0"/>`;
+    if(it.top==="sprinkles"){ const SP = [[21,7,5,-3,"#2f8fd6"],[29,3,4,4,"#f2b51c"],[35,8,-5,-2,"#1f9a7c"],[24,13,5,2,"#e2335c"],[33,14,4,-4,"#8b5cf6"],[38,13,-2,-5,"#e2335c"],[28,9,0,0,"#ffffff"]];
+      g += `<g stroke-linecap="round">` + SP.map(([x,yy,dx,dy,c])=>{ const y1 = topY + yy, x2 = x + (dx||1), y2 = y1 + dy; return `<path d="M${x} ${y1} L${x2} ${y2}" stroke="#3a2420" stroke-width="5"/><path d="M${x} ${y1} L${x2} ${y2}" stroke="${c}" stroke-width="3"/>`; }).join("") + `</g>`; }
+    if(it.top==="mint") g += `<path d="M30 ${topY+4} Q16 ${topY+4} 13 ${topY-9} Q27 ${topY-10} 30 ${topY+4} Z M30 ${topY+4} Q44 ${topY+4} 47 ${topY-9} Q33 ${topY-10} 30 ${topY+4} Z" fill="#3fbf6a" stroke="#155c2c" stroke-width="2" stroke-linejoin="round"/><path d="M29 ${topY+3} L17 ${topY-6} M31 ${topY+3} L43 ${topY-6}" stroke="#155c2c" stroke-width="1.4"/>`;
+    if(it.top==="chip"){ const CH = [[19,8],[27,3],[35,7],[23,14],[31,12],[38,15]];
+      g += `<g fill="#c9894f" stroke="#3b1e10" stroke-width="1.6" stroke-linejoin="round">` + CH.map(([x,yy])=>`<path d="M${x} ${topY+yy+3} l3.5 -7 l3.5 7 z"/>`).join("") + `</g>`; }
+    // Tight picture box: no empty space above the top of the ice cream
+    vbTop = Math.max(-16, Math.min(coneTop - 2, topY - (it.top==="cherry" ? 15 : it.top==="mint" ? 12 : 3)));
   } else if(it.type==="drink"){
     const d = DRINK[it.drink];
     g += `<path d="M14 36 Q20 30 22 24 M30 34 Q36 28 34 20 M44 36" fill="none" stroke="#b9a59c" stroke-width="2" stroke-linecap="round" opacity=".8"/>`;
@@ -372,7 +392,9 @@ function drawItem(it){
     if(it.pastry==="muffin") g += `<path d="M17 52 L43 52 L40 70 L20 70 Z" fill="#f29fb8" stroke="#b5426a" stroke-width="2" stroke-linejoin="round"/><path d="M23 54 L24 68 M30 54 V68 M37 54 L36 68" stroke="#b5426a" stroke-width="1.2"/><path d="M13 54 Q12 34 30 34 Q48 34 47 54 Z" fill="#a8673f" stroke="#6b3b24" stroke-width="2"/>`;
     if(it.pastry==="croissant") g += `<path d="M8 66 Q14 44 30 44 Q46 44 52 66 Q44 60 38 62 Q34 56 30 56 Q26 56 22 62 Q16 60 8 66 Z" fill="#e8a84c" stroke="#9a6a2c" stroke-width="2" stroke-linejoin="round"/><path d="M22 62 Q24 50 30 48 M38 62 Q36 50 30 48" fill="none" stroke="#9a6a2c" stroke-width="1.4"/>`;
   }
-  return `<svg viewBox="0 0 60 80" aria-hidden="true">${g}</svg>`;
+  if(it.type==="drink") vbTop = 18;
+  if(it.type==="bake") vbTop = it.pastry==="muffin" ? 32 : 42;
+  return `<svg viewBox="0 ${vbTop} 60 ${80 - vbTop}" aria-hidden="true">${g}</svg>`;
 }
 function describe(it){
   if(it.type==="ice"){
