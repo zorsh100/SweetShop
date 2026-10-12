@@ -1,0 +1,508 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sweet Farm</title>
+<!-- Sweet Farm v1.3 (2026-10-12) - game 2 of Sweet Shop Games. v1.1: hens stand in a tall line beside the farm, each inside its own den. v1.2: lollipops changed to cherries. v1.3: bigger grow time differences, time shown on each seed button, egg sits big in the middle of the den -->
+<meta name="version" content="1.3">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lilita+One&family=Nunito:wght@600;800;900&display=swap">
+<style>
+[hidden]{display:none!important}
+/* Layout: to-do list on top, a grid of dirt plots with a tall line of hens on the right, then the seed picker */
+:root{
+  --bg:#fff6f3; --panel:#ffffff; --ink:#3a2420; --soft:#8a6a62;
+  --berry:#e2335c; --berry-ink:#ffffff; --choco:#6b3b24; --mint:#1f9a7c; --oops:#d23a1f;
+  --line:#ecd9d2; --lock:#c9b7b0;
+  --grass:#d9efc4; --grass-line:#b9dc9c; --soil:#b07a4f; --soil-wet:#7d4f2e; --water:#2f8fd6; --straw:#f2d48a; --wood:#d9a066; --den:#5a341f; --roof:#e2335c;
+  --display:"Lilita One","Arial Rounded MT Bold",system-ui,sans-serif;
+  --body:"Nunito",system-ui,-apple-system,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#211514; --panel:#2e1f1d; --ink:#fbeee9; --soft:#c4a59c;
+  --berry:#ff5a7e; --berry-ink:#2a0d14; --choco:#a8673f; --mint:#45c9a8; --oops:#ff7a5c;
+  --line:#463230; --lock:#6d5752;
+  --grass:#27341f; --grass-line:#3a4c2e; --soil:#80553a; --soil-wet:#553522; --water:#5fb3ff; --straw:#8a7340; --wood:#8a5a34; --den:#1c100a; --roof:#c42a4f; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#211514; --panel:#2e1f1d; --ink:#fbeee9; --soft:#c4a59c;
+  --berry:#ff5a7e; --berry-ink:#2a0d14; --choco:#a8673f; --mint:#45c9a8; --oops:#ff7a5c;
+  --line:#463230; --lock:#6d5752;
+  --grass:#27341f; --grass-line:#3a4c2e; --soil:#80553a; --soil-wet:#553522; --water:#5fb3ff; --straw:#8a7340; --wood:#8a5a34; --den:#1c100a; --roof:#c42a4f; color-scheme:dark}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html,body{height:100%;overscroll-behavior:none}
+body{margin:0}
+.back{display:inline-flex;align-items:center;min-height:48px;font-weight:900;color:var(--soft);text-decoration:none}
+.back:focus-visible{outline:3px solid var(--mint);outline-offset:2px;border-radius:8px}
+.top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.bank{font-weight:900;color:var(--soft)}
+.bank b{color:var(--ink)}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-weight:600;font-size:16px;-webkit-tap-highlight-color:transparent;-webkit-text-size-adjust:100%}
+button{-webkit-touch-callout:none;touch-action:manipulation;min-height:48px;min-width:48px}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:14px 28px;display:grid;gap:14px;box-sizing:border-box}
+/* While playing: one full screen, no scrolling */
+body.playing{overflow:hidden;position:fixed;inset:0}
+body.playing .wrap{height:100%;grid-template-rows:auto auto minmax(0,1fr);padding-block:6px;gap:6px}
+body.playing h1{font-size:1.5rem}
+#game:not([hidden]){display:grid;grid-template-rows:auto auto minmax(0,1fr) auto auto;gap:6px;min-height:0}
+h1{font-family:var(--display);font-weight:400;font-size:clamp(2rem,8vw,3.4rem);letter-spacing:.04em;text-wrap:balance;margin:0;line-height:1;color:var(--berry)}
+h2{font-family:var(--display);font-weight:400;font-size:1.3rem;margin:0;text-wrap:balance}
+button{font-family:var(--body);font-weight:900;font-size:1rem;border:0;border-radius:14px;cursor:pointer;color:var(--ink)}
+button:focus-visible,input:focus-visible{outline:3px solid var(--mint);outline-offset:2px}
+.big{background:var(--berry);color:var(--berry-ink);padding:14px 22px;font-size:1.2rem;box-shadow:0 4px 0 color-mix(in srgb,var(--berry) 60%,#000)}
+.big:active{transform:translateY(3px);box-shadow:0 1px 0 color-mix(in srgb,var(--berry) 60%,#000)}
+.card{background:var(--panel);border:2px solid var(--line);border-radius:18px;padding:12px}
+.num{font-variant-numeric:tabular-nums}
+
+/* start */
+#start{display:grid;gap:16px;justify-items:start;padding:14px}
+label,.lbl{font-weight:900}
+input[type=text]{font:inherit;font-weight:800;font-size:1.1rem;padding:10px 12px;border-radius:12px;border:2px solid var(--line);background:var(--bg);color:var(--ink);width:min(100%,320px);min-height:48px;box-sizing:border-box}
+.choices{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.choices button{background:var(--bg);border:2px solid var(--line);padding:10px 16px}
+.choices button[aria-pressed="true"]{border-color:var(--berry);background:color-mix(in srgb,var(--berry) 15%,var(--bg))}
+.howto{display:grid;gap:6px;margin:0;padding-left:1.2em;line-height:1.45;max-width:60ch}
+.note{margin:0;max-width:60ch;line-height:1.45}
+
+/* score bar */
+.hud{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;text-align:center;padding:8px}
+.hud > div{display:grid;gap:2px;justify-items:center;align-content:center}
+.hud b{font-family:var(--display);font-weight:400;font-size:1.7rem;line-height:1}
+.hud span{font-size:.85rem;color:var(--soft);font-weight:800}
+.hud .low b{color:var(--oops)}
+.stop{background:var(--panel);border:2px solid var(--line);padding:6px 16px}
+.rush-tag{color:var(--mint)}
+.sun{height:8px;border-radius:99px;background:var(--line);overflow:hidden;grid-column:1/-1}
+.sun i{display:block;height:100%;width:100%;background:#f2b51c;border-radius:99px}
+
+/* to-do list */
+.todo{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:0;padding:0;list-style:none}
+.todo li{display:flex;align-items:center;gap:4px;background:var(--panel);border:2px solid var(--line);border-radius:99px;padding:2px 10px 2px 4px;font-weight:900;min-height:40px;box-sizing:border-box}
+.todo li svg{width:32px;height:32px}
+.todo li.done{border-color:var(--mint);background:color-mix(in srgb,var(--mint) 18%,var(--panel))}
+.todo li.done .cnt::after{content:" \2713";color:var(--mint)}
+
+/* farm */
+.farm{background:var(--grass);border:2px solid var(--grass-line);border-radius:18px;padding:8px;display:grid;grid-template-columns:repeat(var(--cols,3),minmax(0,1fr));grid-template-rows:repeat(3,minmax(0,1fr));gap:8px;min-height:0;
+  touch-action:none;user-select:none;-webkit-user-select:none;-webkit-touch-callout:none}
+.plot{position:relative;background:var(--soil);border-radius:14px;padding:0;display:grid;place-items:center;overflow:visible;box-shadow:inset 0 -4px 0 rgba(0,0,0,.15);touch-action:none}
+.plot.wet{background:var(--soil-wet)}
+.plot svg.art{width:min(72%,70px);height:min(72%,70px);pointer-events:none}
+.plot .plus{font-family:var(--display);font-size:1.8rem;color:color-mix(in srgb,var(--soil) 60%,#fff);pointer-events:none}
+.plot.ready svg.art{animation:bob 1s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-4px) scale(1.05)}}
+.plot .drop{position:absolute;top:4px;right:4px;width:26px;height:26px;pointer-events:none;animation:ask 1s ease-in-out infinite}
+@keyframes ask{50%{transform:scale(1.2)}}
+.plot .bar{position:absolute;left:10%;right:10%;bottom:6px;height:6px;border-radius:99px;background:rgba(0,0,0,.25);overflow:hidden;pointer-events:none}
+.plot .bar i{display:block;height:100%;width:0;background:#7be08f}
+.plot.sel-ok{outline:3px solid var(--mint);outline-offset:-3px}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-5px)}75%{transform:translateX(5px)}}
+.pop{position:absolute;top:-4px;left:50%;transform:translateX(-50%);font-weight:900;font-size:1rem;animation:up .9s ease-out forwards;pointer-events:none;white-space:nowrap;
+  background:var(--panel);border-radius:99px;padding:2px 10px;z-index:2}
+.pop.g{color:var(--mint)} .pop.b{color:var(--oops)}
+@keyframes up{to{transform:translate(-50%,-40px);opacity:0}}
+
+/* hens: one tall line on the right side of the farm. Each hen sits inside its own den (a little hen house). */
+.yard{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;min-height:0}
+.coop{display:grid;grid-template-rows:repeat(3,minmax(0,1fr));gap:16px;padding-top:14px;width:84px;min-height:0;touch-action:none;user-select:none;-webkit-user-select:none}
+.hen{position:relative;background:var(--wood);border-radius:4px 4px 12px 12px;min-height:48px;display:flex;padding:6px 6px 0;box-shadow:inset 0 -4px 0 rgba(0,0,0,.15)}
+.hen::before{content:"";position:absolute;left:-6px;right:-6px;top:-14px;height:20px;background:var(--roof);clip-path:polygon(50% 0,100% 100%,0 100%);pointer-events:none}
+.hen .door{flex:1;min-height:0;display:grid;place-items:end center;border-radius:40px 40px 0 0;background:linear-gradient(to top,var(--straw) 0 22%,var(--den) 22%);overflow:hidden;pointer-events:none}
+.hen svg.h{width:min(92%,56px);height:auto;max-height:90%;margin-bottom:6%;pointer-events:none}
+.hen svg.e{position:absolute;left:50%;bottom:2px;width:38px;height:38px;margin-left:-19px;pointer-events:none;animation:bob 1s ease-in-out infinite;filter:drop-shadow(0 1px 1px rgba(0,0,0,.3))}
+
+/* seeds */
+.seeds{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}
+.seeds button{background:var(--panel);border:2px solid var(--line);padding:4px 2px;display:grid;justify-items:center;gap:0;font-size:.78rem;line-height:1.1}
+.seeds button svg{width:30px;height:30px}
+.seeds button .gt{color:var(--soft);font-weight:900}
+.seeds button[aria-pressed="true"] .gt{color:var(--ink)}
+.seeds button[aria-pressed="true"]{border-color:var(--berry);background:color-mix(in srgb,var(--berry) 15%,var(--panel))}
+.tip{margin:0;color:var(--soft);font-weight:800;text-align:center;font-size:.9rem}
+
+/* end */
+#end{position:fixed;inset:0;background:color-mix(in srgb,var(--bg) 88%,transparent);display:grid;place-items:center;padding:16px;z-index:5;overflow:auto}
+#end .card{max-width:440px;width:100%;display:grid;gap:12px;justify-items:center;text-align:center;padding:14px}
+.stars{font-size:2.6rem;letter-spacing:.1em;color:var(--lock)}
+.stars .on{color:#f2b51c}
+.tally{display:grid;grid-template-columns:1fr auto;gap:6px 16px;text-align:left;width:100%}
+.tally .num{text-align:right;font-weight:900}
+.tally .tot{border-top:2px solid var(--line);padding-top:6px;font-weight:900}
+@media (max-width:480px){.hud b{font-size:1.35rem}.todo li svg{width:26px;height:26px}.coop{width:68px}.hen svg.e{width:34px;height:34px;margin-left:-17px}}
+@media (max-height:640px){.hen svg.e{width:30px;height:30px;margin-left:-15px}}
+@media (max-height:640px){body.playing h1{display:none}}
+@media (prefers-reduced-motion:reduce){.plot.ready svg.art,.plot .drop,.hen svg.e{animation:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><a class="back" href="../index.html">&larr; All games</a><span class="bank">Coin bank: <b class="num" id="bankTop">0</b></span></div>
+  <h1>SWEET FARM</h1>
+
+  <section id="start" class="card">
+    <h2>Get your farm jobs done!</h2>
+    <ol class="howto">
+      <li>Your farm has a to-do list. Get it all done!</li>
+      <li>Pick a seed at the bottom. Tap the dirt to plant it.</li>
+      <li>See a water drop? Tap the plant to water it.</li>
+      <li>When a plant jumps up and down, it is ready. Tap it to pick it.</li>
+      <li>Some plants grow fast and some grow slow. Each seed shows how many seconds it takes.</li>
+      <li>Hens lay eggs. Tap a hen with an egg to get the egg.</li>
+    </ol>
+    <label for="farmName">Name your farm</label>
+    <input type="text" id="farmName" maxlength="18" value="Sweet Farm" autocomplete="off">
+    <div>
+      <span class="lbl">How do you want to play?</span>
+      <div class="choices" id="modes">
+        <button type="button" data-mode="clock" aria-pressed="true">Beat the clock</button>
+        <button type="button" data-mode="norush" aria-pressed="false">No rush</button>
+      </div>
+    </div>
+    <p id="clockInfo" class="note">Beat the clock: get the whole list done before the sun goes down. Each job on the list: +10 coins. Finish early for bonus coins!</p>
+    <p id="rushInfo" class="note" hidden>No rush: there is no clock. Take your time. Fewer taps get more stars. No rush does not add coins. Tap Stop when you are done.</p>
+    <div id="levelPick">
+      <span class="lbl">How hard?</span>
+      <div class="choices" id="levels">
+        <button type="button" data-level="easy" aria-pressed="true">Easy</button>
+        <button type="button" data-level="medium" aria-pressed="false">Medium</button>
+        <button type="button" data-level="hard" aria-pressed="false">Hard</button>
+      </div>
+      <p class="note" id="levelInfo" style="margin-top:6px;color:var(--soft)">Easy: a short list and lots of time.</p>
+    </div>
+    <button class="big" id="go">Start!</button>
+    <small style="color:var(--soft)">v1.3</small>
+  </section>
+
+  <section id="game" hidden>
+    <div class="card hud">
+      <div><b class="num" id="hudA">0</b><span id="hudALbl">coins</span></div>
+      <div id="timeBox"><b class="num" id="time">0</b><span>seconds left</span></div>
+      <div id="stopBox" hidden><button type="button" class="stop" id="stop">Stop</button><span class="rush-tag">No rush</span></div>
+      <div><b class="num" id="jobs">0</b><span>jobs done</span></div>
+      <div class="sun" id="sun"><i id="sunBar"></i></div>
+    </div>
+    <ul class="todo" id="todo" aria-label="To-do list"></ul>
+    <div class="yard">
+      <div class="farm" id="farm"></div>
+      <div class="coop" id="coop"></div>
+    </div>
+    <div class="seeds" id="seeds" role="group" aria-label="Pick a seed"></div>
+    <p class="tip" id="tip">Pick a seed, then tap the dirt.</p>
+  </section>
+</div>
+
+<div id="end" hidden>
+  <div class="card">
+    <h2 id="endTitle"></h2>
+    <div class="stars" id="stars" aria-label=""></div>
+    <div class="tally num" id="tally"></div>
+    <p id="endText" style="margin:0"></p>
+    <p id="bankText" style="margin:0;font-weight:900"></p>
+    <button class="big" id="again">Play again</button>
+    <a class="back" href="../index.html">&larr; Back to all games</a>
+  </div>
+</div>
+
+<script>
+// Shared coin bank for all Sweet Shop Games (saved on this device only)
+const BANK_KEY = "sweetShopGames.coins";
+function readBank(){ try{ return Math.max(0, parseInt(localStorage.getItem(BANK_KEY) || "0", 10) || 0); }catch(_){ return 0; } }
+function addToBank(n){ const t = readBank() + n; try{ localStorage.setItem(BANK_KEY, String(t)); }catch(_){} return t; }
+function showBank(){ const el = document.getElementById("bankTop"); if(el) el.textContent = readBank().toLocaleString("en-US"); }
+showBank();
+window.addEventListener("pageshow", showBank);
+
+// Pictures
+const SVG = {
+  berry:`<svg viewBox="0 0 44 44"><path d="M7 16 Q22 12 37 16 Q34 34 22 42 Q10 34 7 16Z" fill="#e2335c" stroke="#8c1430" stroke-width="2"/><path d="M8 16 L12 5 L16 15 L20 4 L24 15 L28 4 L31 15 L36 6 L36 16" fill="#2fae8f" stroke="#17614f" stroke-width="1.6" stroke-linejoin="round"/><g fill="#fff3a8"><circle cx="15" cy="22" r="1.4"/><circle cx="22" cy="21" r="1.4"/><circle cx="29" cy="22" r="1.4"/><circle cx="18" cy="29" r="1.4"/><circle cx="26" cy="29" r="1.4"/><circle cx="22" cy="35" r="1.4"/></g></svg>`,
+  cherry:`<svg viewBox="0 0 44 44"><path d="M13 27 C15 18 20 11 26 6 M31 28 C30 20 28 13 26 6" fill="none" stroke="#3f7a2a" stroke-width="2.2" stroke-linecap="round"/><path d="M26 6 C32 3 37 6 39 11 C33 13 28 10 26 6Z" fill="#5fd17a" stroke="#2f8f4e" stroke-width="1.4"/><circle cx="13" cy="33" r="8" fill="#d4183f" stroke="#7a0c22" stroke-width="2"/><circle cx="31" cy="34" r="8" fill="#d4183f" stroke="#7a0c22" stroke-width="2"/><circle cx="10" cy="30" r="2" fill="#ff9ab0"/><circle cx="28" cy="31" r="2" fill="#ff9ab0"/></svg>`,
+  wheat:`<svg viewBox="0 0 44 44"><path d="M22 42V8" stroke="#a87410" stroke-width="2.4"/><g fill="#f2c443" stroke="#a87410" stroke-width="1.4"><ellipse cx="22" cy="8" rx="3" ry="5"/><ellipse cx="17" cy="15" rx="3" ry="5" transform="rotate(-30 17 15)"/><ellipse cx="27" cy="15" rx="3" ry="5" transform="rotate(30 27 15)"/><ellipse cx="17" cy="24" rx="3" ry="5" transform="rotate(-30 17 24)"/><ellipse cx="27" cy="24" rx="3" ry="5" transform="rotate(30 27 24)"/></g></svg>`,
+  cocoa:`<svg viewBox="0 0 44 44"><path d="M22 4 C34 8 36 30 22 40 C8 30 10 8 22 4Z" fill="#c26a2a" stroke="#6b3b24" stroke-width="2"/><path d="M22 6V38M16 10 C13 20 14 30 18 36M28 10 C31 20 30 30 26 36" fill="none" stroke="#6b3b24" stroke-width="1.6"/></svg>`,
+  egg:`<svg viewBox="0 0 44 44"><path d="M22 5 C31 5 36 20 36 27 C36 35 30 40 22 40 C14 40 8 35 8 27 C8 20 13 5 22 5Z" fill="#fff8ec" stroke="#b08a5a" stroke-width="2"/></svg>`,
+  seed:`<svg viewBox="0 0 44 44"><g fill="#4a2a18"><ellipse cx="14" cy="30" rx="3.4" ry="2.2"/><ellipse cx="22" cy="33" rx="3.4" ry="2.2"/><ellipse cx="30" cy="30" rx="3.4" ry="2.2"/></g></svg>`,
+  sprout:`<svg viewBox="0 0 44 44"><path d="M22 40V22" stroke="#2f8f4e" stroke-width="3" stroke-linecap="round"/><path d="M22 27 C14 27 10 21 10 15 C18 15 22 20 22 27Z" fill="#5fd17a" stroke="#2f8f4e" stroke-width="1.6"/><path d="M22 23 C30 23 34 17 34 11 C26 11 22 16 22 23Z" fill="#5fd17a" stroke="#2f8f4e" stroke-width="1.6"/></svg>`,
+  wilt:`<svg viewBox="0 0 44 44"><path d="M22 40 C22 32 22 26 26 22" fill="none" stroke="#8a6a3a" stroke-width="3" stroke-linecap="round"/><path d="M26 22 C30 26 34 30 32 36 C27 33 25 28 26 22Z" fill="#b59a5a" stroke="#7a5a2a" stroke-width="1.6"/></svg>`,
+  drop:`<svg class="drop" viewBox="0 0 24 24"><path d="M12 2 C12 2 4 11 4 16 a8 8 0 0 0 16 0 C20 11 12 2 12 2Z" fill="#3a9bdc" stroke="#1d5f8f" stroke-width="1.6"/></svg>`,
+  hen:`<svg class="h" viewBox="0 0 64 56"><ellipse cx="30" cy="34" rx="20" ry="15" fill="#fffaf2" stroke="#6b3b24" stroke-width="2"/><circle cx="46" cy="20" r="9" fill="#fffaf2" stroke="#6b3b24" stroke-width="2"/><path d="M41 12 Q43 6 46 11 Q48 5 51 12" fill="#e2335c" stroke="#8c1430" stroke-width="1.4"/><path d="M54 19 L61 22 L54 25Z" fill="#f2b51c" stroke="#a87410" stroke-width="1.2"/><circle cx="48" cy="19" r="1.7" fill="#3a2420"/><path d="M12 30 Q4 24 10 19 Q14 25 17 28" fill="#fffaf2" stroke="#6b3b24" stroke-width="2"/><path d="M22 34 Q30 42 38 34" fill="none" stroke="#c9b7b0" stroke-width="2"/></svg>`
+};
+// The 4 crops. "grow" = seconds for each of the 2 growing steps (all the way = grow x 2).
+const CROPS = [
+  {key:"berry", name:"Strawberries", seed:"Berry", grow:4},   //  8 seconds all the way
+  {key:"cherry", name:"Cherries",    seed:"Cherry", grow:6},  // 12 seconds
+  {key:"wheat", name:"Wheat",        seed:"Wheat", grow:2},   //  4 seconds (fastest)
+  {key:"cocoa", name:"Cocoa beans",  seed:"Cocoa", grow:8}    // 16 seconds (slowest)
+];
+const EGG = 4;                 // job kind 4 = eggs
+const PER_JOB = 10;            // coins for each thing on the list
+// time = seconds in the day. wilt = seconds a thirsty plant waits before it dries up (0 = never)
+const LEVELS = {
+  easy:  {jobs:3, min:2, max:3, time:90, wilt:0,  info:"Easy: a short list and lots of time."},
+  medium:{jobs:4, min:2, max:4, time:80, wilt:10, info:"Medium: a longer list. Thirsty plants dry up if you wait too long."},
+  hard:  {jobs:5, min:3, max:4, time:75, wilt:6,  info:"Hard: the biggest list. Thirsty plants dry up fast!"}
+};
+const NORUSH_LEVEL_WILT = 0;   // No rush: plants never dry up
+function starsFor(pct){ return pct>=100?3 : pct>=75?2 : pct>=50?1 : 0; }
+
+const $ = id => document.getElementById(id);
+const farmEl = $("farm"), coopEl = $("coop");
+let S = null;
+
+// Seed buttons
+let seedPick = 0;
+$("seeds").innerHTML = CROPS.map((c,i)=>`<button type="button" data-seed="${i}" aria-pressed="${i===0}" aria-label="${c.name} seeds, grows in ${c.grow*2} seconds">${SVG[c.key]}<span>${c.seed} <span class="gt">${c.grow*2}s</span></span></button>`).join("");
+function pickSeed(i){
+  seedPick = i;
+  document.querySelectorAll("#seeds button").forEach(b=>b.setAttribute("aria-pressed", +b.dataset.seed===i));
+}
+document.querySelectorAll("#seeds button").forEach(b=>b.addEventListener("click", ()=>pickSeed(+b.dataset.seed)));
+
+// One tap handler for plots and hens: pointerdown for fingers, click with detail 0 for the keyboard
+function onTap(el, fn){
+  el.addEventListener("pointerdown", e=>{ e.preventDefault(); fn(); });
+  el.addEventListener("click", e=>{ if(e.detail === 0) fn(); });
+}
+
+function makeJobs(lv){
+  const crops = [0,1,2,3].sort(()=>Math.random()-.5).slice(0, lv.jobs - 1).sort();
+  const kinds = crops.concat([EGG]);
+  return kinds.map(k=>({kind:k, need: lv.min + Math.floor(Math.random()*(lv.max - lv.min + 1)), got:0}));
+}
+function jobPic(k){ return k===EGG ? SVG.egg : SVG[CROPS[k].key]; }
+function jobName(k){ return k===EGG ? "Eggs" : CROPS[k].name; }
+function drawTodo(){
+  $("todo").innerHTML = S.jobs.map(j=>`<li class="${j.got>=j.need?"done":""}" aria-label="${jobName(j.kind)}: ${j.got} of ${j.need}">${jobPic(j.kind)}<span class="cnt num">${j.got}/${j.need}</span></li>`).join("");
+}
+
+// Plots
+function buildFarm(n){
+  farmEl.style.setProperty("--cols", n / 3);
+  farmEl.innerHTML = "";
+  S.plots = [];
+  for(let i=0;i<n;i++){
+    const el = document.createElement("button");
+    el.type = "button"; el.className = "plot";
+    const p = {el, state:"empty", crop:0, thirsty:false, t:0, dry:0, shown:""};
+    onTap(el, ()=>tapPlot(p));
+    farmEl.appendChild(el);
+    S.plots.push(p);
+    renderPlot(p);
+  }
+}
+function renderPlot(p){
+  const key = p.state + "|" + p.crop + "|" + p.thirsty;
+  if(key !== p.shown){
+    p.shown = key;
+    let art = "", label = "";
+    if(p.state==="empty"){ art = `<span class="plus">+</span>`; label = "Empty dirt. Tap to plant."; }
+    else if(p.state==="seed"){ art = SVG.seed; label = CROPS[p.crop].name + " seeds"; }
+    else if(p.state==="sprout"){ art = SVG.sprout; label = CROPS[p.crop].name + " sprout"; }
+    else if(p.state==="ready"){ art = SVG[CROPS[p.crop].key]; label = CROPS[p.crop].name + " ready. Tap to pick."; }
+    else if(p.state==="wilt"){ art = SVG.wilt; label = "Dried up"; }
+    if(p.thirsty) label += ". Needs water. Tap to water.";
+    p.el.innerHTML = art.replace("<svg ", '<svg class="art" ') + (p.thirsty ? SVG.drop : "") +
+      ((p.state==="seed"||p.state==="sprout") && !p.thirsty ? `<span class="bar"><i></i></span>` : "");
+    p.el.classList.toggle("wet", (p.state==="seed"||p.state==="sprout") && !p.thirsty);
+    p.el.classList.toggle("ready", p.state==="ready");
+    p.el.setAttribute("aria-label", label);
+  }
+  const bar = p.el.querySelector(".bar i");
+  if(bar) bar.style.width = Math.min(100, p.t / CROPS[p.crop].grow * 100) + "%";
+}
+function pop(el, text, good){
+  const d = document.createElement("div");
+  d.className = "pop " + (good ? "g" : "b"); d.textContent = text;
+  el.appendChild(d); d.addEventListener("animationend", ()=>d.remove());
+}
+function shake(el){ el.classList.remove("shake"); void el.offsetWidth; el.classList.add("shake"); }
+
+function tapPlot(p){
+  if(!S || S.over) return;
+  S.taps++;
+  if(p.state==="empty"){
+    p.state = "seed"; p.crop = seedPick; p.thirsty = true; p.t = 0; p.dry = 0;
+    $("tip").textContent = "Tap the plant with the water drop.";
+  } else if(p.thirsty){
+    p.thirsty = false; p.t = 0;
+    pop(p.el, "Splash!", true);
+  } else if(p.state==="ready"){
+    p.state = "empty";
+    harvest(p.crop, p.el);
+  } else {
+    shake(p.el);   // still growing or dried up: nothing to do yet
+  }
+  renderPlot(p);
+  draw();
+}
+
+// Hens
+function buildCoop(){
+  coopEl.innerHTML = "";
+  S.hens = [0,1,2].map(i=>{
+    const el = document.createElement("button");
+    el.type = "button"; el.className = "hen";
+    const h = {el, egg:false, t: 2 + Math.random()*4, shown:null};
+    onTap(el, ()=>tapHen(h));
+    coopEl.appendChild(el);
+    renderHen(h);
+    return h;
+  });
+}
+function renderHen(h){
+  if(h.shown === h.egg) return;
+  h.shown = h.egg;
+  h.el.innerHTML = `<span class="door">${SVG.hen}</span>` + (h.egg ? SVG.egg.replace("<svg ", '<svg class="e" ') : "");
+  h.el.setAttribute("aria-label", h.egg ? "Hen house with an egg. Tap to get it." : "Hen house. No egg yet.");
+}
+function tapHen(h){
+  if(!S || S.over) return;
+  S.taps++;
+  if(h.egg){
+    h.egg = false; h.t = 4 + Math.random()*4;
+    harvest(EGG, h.el);
+  } else shake(h.el);
+  renderHen(h);
+  draw();
+}
+
+function harvest(kind, el){
+  const j = S.jobs.find(x=>x.kind===kind);
+  if(j && j.got < j.need){
+    j.got++; S.done++;
+    if(!S.norush){ S.coins += PER_JOB; pop(el, "+" + PER_JOB, true); }
+    else pop(el, "Yes!", true);
+  } else {
+    pop(el, j ? "Got enough!" : "Not on the list", false);
+  }
+  drawTodo();
+  if(S.done >= S.total) setTimeout(finish, 500);
+}
+
+function draw(){
+  $("jobs").textContent = S.done + "/" + S.total;
+  if(S.norush){ $("hudA").textContent = S.taps; return; }
+  $("hudA").textContent = S.coins;
+  const left = Math.max(0, Math.ceil(S.timeLeft));
+  $("time").textContent = left;
+  $("timeBox").classList.toggle("low", left <= 10);
+  $("sunBar").style.width = (S.timeLeft / S.dayLen * 100) + "%";
+}
+
+let last = 0;
+function loop(now){
+  if(!S || S.over) return;
+  const dt = Math.min(0.05, (now - (last || now)) / 1000); last = now;
+  for(const p of S.plots){
+    if(p.state==="seed" || p.state==="sprout"){
+      if(p.thirsty){
+        if(S.wilt > 0){ p.dry += dt; if(p.dry >= S.wilt){ p.state = "wilt"; p.thirsty = false; p.t = 0; pop(p.el, "Dried up!", false); } }
+      } else {
+        p.t += dt;
+        if(p.t >= CROPS[p.crop].grow){
+          if(p.state==="seed"){ p.state = "sprout"; p.thirsty = true; p.dry = 0; p.t = 0; }
+          else { p.state = "ready"; }
+        }
+      }
+    } else if(p.state==="wilt"){
+      p.t += dt; if(p.t >= 1.2){ p.state = "empty"; p.t = 0; }
+    }
+    renderPlot(p);
+  }
+  for(const h of S.hens){
+    if(!h.egg){ h.t -= dt; if(h.t <= 0) h.egg = true; }
+    renderHen(h);
+  }
+  if(!S.norush){
+    S.timeLeft -= dt;
+    if(S.timeLeft <= 0){ S.timeLeft = 0; draw(); finish(); return; }
+  }
+  draw();
+  requestAnimationFrame(loop);
+}
+
+function showStars(st){
+  $("stars").innerHTML = [0,1,2].map(i=>`<span class="${i<st?"on":""}">★</span>`).join("");
+  $("stars").setAttribute("aria-label", `${st} out of 3 stars`);
+}
+
+function finish(){
+  if(!S || S.over) return;
+  S.over = true;
+  if(S.norush){
+    const all = S.done >= S.total;
+    // Fewest taps: each crop is plant + water + water + pick = 4 taps. Each egg is 1 tap.
+    const best = S.jobs.reduce((n,j)=>n + j.need * (j.kind===EGG ? 1 : 4), 0);
+    const st = !all ? starsFor(Math.round(S.done / S.total * 100)) - 1 :
+      S.taps <= best + 2 ? 3 : S.taps <= Math.round(best * 1.3) + 2 ? 2 : 1;
+    showStars(Math.max(0, st));
+    $("tally").innerHTML = `
+      <span>Jobs done</span><span class="num">${S.done} of ${S.total}</span>
+      <span>Your taps</span><span class="num">${S.taps}</span>
+      <span class="tot">Fewest taps you can do</span><span class="num tot">${best}</span>`;
+    $("endTitle").textContent = all ? "All jobs done!" : "Farm day over";
+    $("endText").textContent = !all ? "Try to finish the whole list next time." :
+      st >= 3 ? "Wow! Almost no extra taps!" : "Nice farming! Try to use fewer taps for more stars.";
+    $("bankText").textContent = "No rush does not add coins to your coin bank.";
+  } else {
+    const pct = Math.round(S.done / S.total * 100), all = S.done >= S.total;
+    const secs = Math.ceil(S.timeLeft);
+    const bonus = all ? 50 + secs : 0, total = S.coins + bonus;
+    showStars(starsFor(pct));
+    $("tally").innerHTML = `
+      <span>Jobs done</span><span class="num">${S.done} of ${S.total} (${pct}%)</span>
+      <span>Coins for jobs</span><span class="num">${S.coins}</span>
+      <span>Bonus: all done</span><span class="num">+${all ? 50 : 0}</span>
+      <span>Bonus: seconds left</span><span class="num">+${all ? secs : 0}</span>
+      <span class="tot">${S.name}</span><span class="num tot">${total}</span>`;
+    $("endTitle").textContent = all ? "All jobs done!" : "The sun went down!";
+    $("endText").textContent = all ? "Great farming! Finish faster for more bonus coins." :
+      "Finish the whole list to get bonus coins.";
+    const newBank = addToBank(total); showBank();
+    $("bankText").textContent = `+${total} coins to your coin bank. Bank: ${newBank.toLocaleString("en-US")} coins`;
+  }
+  $("end").hidden = false; $("again").focus();
+}
+
+// Stop iPhone and iPad from scrolling or zooming while you play
+["touchmove","gesturestart","dblclick"].forEach(ev=>document.addEventListener(ev, e=>{ if(document.body.classList.contains("playing")) e.preventDefault(); }, {passive:false}));
+document.addEventListener("contextmenu", e=>{ if(document.body.classList.contains("playing")) e.preventDefault(); });
+
+// Start screen
+let level = "easy", mode = "clock";
+document.querySelectorAll("#modes button").forEach(b=>b.addEventListener("click",()=>{
+  mode = b.dataset.mode;
+  document.querySelectorAll("#modes button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+  $("clockInfo").hidden = mode !== "clock";
+  $("rushInfo").hidden = mode !== "norush";
+}));
+document.querySelectorAll("#levels button").forEach(b=>b.addEventListener("click",()=>{
+  level = b.dataset.level;
+  document.querySelectorAll("#levels button").forEach(x=>x.setAttribute("aria-pressed", x===b));
+  $("levelInfo").textContent = LEVELS[level].info;
+}));
+$("stop").addEventListener("click", ()=>{ if(S && S.norush && !S.over) finish(); });
+$("go").addEventListener("click", ()=>{
+  const lv = LEVELS[level], norush = mode === "norush";
+  const jobs = makeJobs(lv);
+  S = {name: $("farmName").value.trim() || "My Farm", norush, jobs,
+       total: jobs.reduce((n,j)=>n+j.need, 0), done:0, coins:0, taps:0,
+       dayLen: lv.time, timeLeft: lv.time, wilt: norush ? NORUSH_LEVEL_WILT : lv.wilt, over:false};
+  buildFarm(window.matchMedia("(min-width:600px)").matches ? 12 : 9);
+  buildCoop();
+  drawTodo();
+  const firstCrop = jobs.find(j=>j.kind!==EGG);
+  pickSeed(firstCrop ? firstCrop.kind : 0);
+  $("hudALbl").textContent = norush ? "taps" : "coins";
+  $("timeBox").hidden = norush; $("sun").hidden = norush; $("stopBox").hidden = !norush;
+  $("tip").textContent = "Pick a seed, then tap the dirt.";
+  $("start").hidden = true; $("game").hidden = false; $("end").hidden = true;
+  document.body.classList.add("playing"); window.scrollTo(0,0);
+  draw(); last = 0; requestAnimationFrame(loop);
+});
+$("again").addEventListener("click", ()=>{
+  $("end").hidden = true; $("game").hidden = true; $("start").hidden = false; S = null;
+  document.body.classList.remove("playing");
+});
+</script>
+</body>
+</html>
